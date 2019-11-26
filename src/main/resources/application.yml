@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: bkk-backup-service
+  main:
+    banner-mode: "off"
+  kafka:
+    consumer:
+      bootstrap-servers: localhost:9092
+      group-id: bkk-backup
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+  data:
+    mongodb:
+      database: routes-backup
+      authentication-database: routes-backup
+      username: routeManager
+      password: route123
+      port: 27017
+      host: localhost
+
+topic: refinedBKK
+
+management:
+  server:
+    port: 9001
+  endpoint:
+    health:
+      show-details: "ALWAYS"
+  security:
+    enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+server:
+  port: 8005
+  servlet:
+    application-display-name: "BKK"
+    context-path: /bkk
+
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 5000
+        loggerLevel: FULL
+  httpclient:
+    follow-redirects: false
+
