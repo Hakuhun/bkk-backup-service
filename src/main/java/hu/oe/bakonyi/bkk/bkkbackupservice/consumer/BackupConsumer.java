@@ -5,8 +5,12 @@ import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.*;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.BkkBusinessDataVKafka;
 import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.Deserializer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -14,18 +18,16 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Properties;
+
 @Service
 @Log4j2
-public class BackupConsumer extends KafkaConsumer<String, String> {
+public class BackupConsumer{
 
     @Autowired
     BackupRepository repository;
 
-    public BackupConsumer(Map<String, Object> configs) {
-        super(configs);
-    }
-
-    @KafkaListener(id = "${spring.kafka.consumer.group-id}", idIsGroup = true, concurrency = "2", topics = "${topic}")
+    @KafkaListener(id = "${spring.kafka.consumer.group-id}", idIsGroup = true, concurrency = "2", topics = "${spring.kafka.topics.refinedBkk}")
     public void consume(@Payload BkkBusinessDataVKafka businessDataV3, @Headers MessageHeaders messageHeaders) {
         Time time = Time.builder().month(businessDataV3.getMonth()).hour(businessDataV3.getHour()).dayOfWeek(businessDataV3.getDayOfWeek()).build();
         MDBBkkBackupIndex index = MDBBkkBackupIndex.builder().routeId(businessDataV3.getRouteId()).time(time).build();

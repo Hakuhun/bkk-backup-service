@@ -4,12 +4,20 @@ spring:
   main:
     banner-mode: "off"
   kafka:
+    topics:
+      refinedBkk: refinedBKK
+    bootstrap-servers: localhost:9092
     consumer:
-      bootstrap-servers: localhost:9092
       group-id: bkk-backup
       auto-offset-reset: latest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring:
+          deserializer:
+            key:
+              delegate:
+                class: org.apache.kafka.common.serialization.StringDeserializer
   data:
     mongodb:
       database: routes-backup
@@ -18,8 +26,6 @@ spring:
       password: route123
       port: 27017
       host: localhost
-
-topic: refinedBKK
 
 management:
   server:
