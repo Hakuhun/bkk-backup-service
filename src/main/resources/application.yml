@@ -11,13 +11,8 @@ spring:
       group-id: bkk-backup
       auto-offset-reset: latest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring:
-          deserializer:
-            key:
-              delegate:
-                class: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
   data:
     mongodb:
       database: routes-backup
@@ -44,7 +39,7 @@ management:
       application: ${spring.application.name}
 
 server:
-  port: 8005
+  port: 8008
   servlet:
     application-display-name: "BKK"
     context-path: /bkk
