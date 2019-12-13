@@ -5,6 +5,7 @@ import hu.oe.bakonyi.bkk.bkkbackupservice.documents.BackupRepository;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackup;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackupData;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.Time;
+import hu.oe.bakonyi.bkk.bkkbackupservice.model.ConditionalPossibilityResponse;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.ConditionalQueryingRequest;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.QueryingCase;
 import org.junit.Test;
@@ -16,6 +17,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.ResourceUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
 import java.io.IOException;
@@ -126,7 +128,7 @@ public class BackupAnalyzerTest {
     }
 
     @Test
-    public void asd() throws IOException {
+    public void calculateConditionalPossibility_isOk() throws IOException {
 
         MDBBkkBackup datas = loadBulkData("classpath:bulkmdbdocumentdata.json");
         Mockito.when(repository.findById(Mockito.any())).thenReturn(Optional.ofNullable(datas));
@@ -157,13 +159,26 @@ public class BackupAnalyzerTest {
                 .build();
 
         ObjectMapper mapper = new ObjectMapper();
-        mapper.writeValue(new File("request.json"), request);
 
         BackupDataAnalyzer analyzer = new BackupDataAnalyzer();
         analyzer.backupRepository = repository;
 
-        System.out.println("Valószínűség: "+analyzer.conditionalProbability(request));
-        Assertions.assertNotEquals(analyzer.conditionalProbability(request),0.0);
+        Assertions.assertNotEquals(analyzer.conditionalProbability(request).getPossibility(),0.0);
+        Assertions.assertEquals(analyzer.conditionalProbability(request).getResponseValue(), ConditionalPossibilityResponse.ResponseValue.OK_CALCULATED);
+
+        request = ConditionalQueryingRequest.builder()
+                .commissionerEvent(QueryingCase.builder().conditions(Arrays.asList(a,b)).route("Hetesbusz").from(time).to(time).build())
+                .questionableEvent(QueryingCase.builder().conditions(Arrays.asList(b,c)).route("Hetesbusz").from(time).to(time).build())
+                .build();
+        ConditionalQueryingRequest finalRequest = request;
+        Assertions.assertThrows(ResponseStatusException.class, ()->analyzer.conditionalProbability(finalRequest));
+        Time badTime = Time.builder().month(1).dayOfWeek(0).hour(0).build();
+        request = ConditionalQueryingRequest.builder()
+                .commissionerEvent(QueryingCase.builder().conditions(Arrays.asList(a,b)).route("BKK_3040").from(time).to(badTime).build())
+                .questionableEvent(QueryingCase.builder().conditions(Arrays.asList(b,c)).route("BKK_3040").from(time).to(badTime).build())
+                .build();
+
+        Assertions.assertEquals(analyzer.conditionalProbability(request).getResponseValue(), ConditionalPossibilityResponse.ResponseValue.OK_NOSUCHDATA);
     }
 
     public MDBBkkBackupData loadData(String path){

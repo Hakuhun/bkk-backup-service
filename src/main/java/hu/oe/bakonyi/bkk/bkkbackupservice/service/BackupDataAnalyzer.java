@@ -28,9 +28,12 @@ public class BackupDataAnalyzer {
         /*
          * P(A|B) = P(A metszet B)/P(A)
          * */
-
         if (request == null)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+
+        if(!request.getCommissionerEvent().getRoute().contains("BKK") || !request.getQuestionableEvent().getRoute().contains("BKK")){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
 
         if (request.getQuestionableEvent() == null || request.getQuestionableEvent().getConditions().isEmpty())
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
@@ -45,21 +48,21 @@ public class BackupDataAnalyzer {
         //A két eseménytér metszete
         List<MDBBkkBackupData> intersectedData = new ArrayList<>(CollectionUtils.intersection(pA.getData(), pB.getData()));
 
-        P intersectedP = P.builder().data(intersectedData).fullEvent(pA.getPositiveCases()+pB.getPositiveCases())
-                        .positiveCases(intersectedData.size()).possibility((double) intersectedData.size()/(pA.getPositiveCases()+pB.getPositiveCases())).build();
+        P intersectedP = P.builder().data(intersectedData).fullEvent(pA.getPositiveCases() + pB.getPositiveCases())
+                .positiveCases(intersectedData.size()).possibility((double) intersectedData.size() / (pA.getPositiveCases() + pB.getPositiveCases())).build();
 
         if (intersectedData.isEmpty()) {
             return ConditionalPossibilityResponse.builder().route(request.getCommissionerEvent().getRoute())
                     .now(Instant.now())
                     .possibility(0)
                     .responseValue(ConditionalPossibilityResponse.ResponseValue.OK_NOSUCHDATA)
-                    .message("A rendszer jelenleg nem képes a kérésben megfelelő adatokkal számítani").build();
+                    .message("Nincs az ön által leírt adathoz megfelelő megfigyelés").build();
         }
         return ConditionalPossibilityResponse.builder().route(request.getCommissionerEvent().getRoute())
                 .now(Instant.now())
                 .possibility(intersectedP.getPossibility() / pB.getPossibility())
                 .responseValue(ConditionalPossibilityResponse.ResponseValue.OK_CALCULATED)
-                .message("Az ön által leírt szcenáriójának valószínűsége: "+ intersectedP.getPossibility() / pB.getPossibility()).build();
+                .message("Az ön által leírt szcenárió valószínűsége: " + intersectedP.getPossibility() / pB.getPossibility()).build();
     }
 
     P calculateP(String route, Time from, Time to, List<ConditionBuilder> conditions) {
@@ -71,10 +74,10 @@ public class BackupDataAnalyzer {
                 positiveCases.add(x);
             }
         }
-        return P.builder().data(positiveCases).fullEvent(data.size()).positiveCases(positiveCases.size()).possibility((double)positiveCases.size()/data.size()).build();
+        return P.builder().data(positiveCases).fullEvent(data.size()).positiveCases(positiveCases.size()).possibility((double) positiveCases.size() / data.size()).build();
     }
 
-    List<MDBBkkBackupData> calculateDataTimes(Time from, Time to, String route){
+    List<MDBBkkBackupData> calculateDataTimes(Time from, Time to, String route) {
         List<MDBBkkBackupData> data = new ArrayList<>();
 
         for (int month = from.getMonth(); month <= to.getMonth(); month++) {

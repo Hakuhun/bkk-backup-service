@@ -17,7 +17,7 @@ public class AnalyzerController {
     BackupDataAnalyzer analyzer;
 
     @PostMapping("/prod/analyze")
-    public ResponseEntity<ConditionalPossibilityResponse> calculateConditionalProbability(@RequestBody ConditionalQueryingRequest data){
+    public ResponseEntity<ConditionalPossibilityResponse> calculateConditionalProbability(@RequestBody ConditionalQueryingRequest data) {
         ConditionalPossibilityResponse response = analyzer.conditionalProbability(data);
         return ResponseEntity.ok(analyzer.conditionalProbability(data));
     }

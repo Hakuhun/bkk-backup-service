@@ -10,8 +10,8 @@ import org.springframework.kafka.annotation.EnableKafka;
 @SpringBootApplication
 public class BkkBackupServiceApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(BkkBackupServiceApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(BkkBackupServiceApplication.class, args);
+    }
 
 }

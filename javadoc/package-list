@@ -1,0 +1,7 @@
+hu.oe.bakonyi.bkk.bkkbackupservice
+hu.oe.bakonyi.bkk.bkkbackupservice.consumer
+hu.oe.bakonyi.bkk.bkkbackupservice.controller
+hu.oe.bakonyi.bkk.bkkbackupservice.documents
+hu.oe.bakonyi.bkk.bkkbackupservice.documents.model
+hu.oe.bakonyi.bkk.bkkbackupservice.model
+hu.oe.bakonyi.bkk.bkkbackupservice.service

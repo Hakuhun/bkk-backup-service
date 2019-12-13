@@ -17,7 +17,7 @@ public class ConditionBuilder {
     double delta;
     double value;
 
-    public enum ConditionalOperator{
+    public enum ConditionalOperator {
         ISLOWER("<"), ISGREATER(">"), EQUALS("="), INDELTA("delta");
 
         String operator;
@@ -27,7 +27,7 @@ public class ConditionBuilder {
         }
     }
 
-    public enum ConditionalVariable{
+    public enum ConditionalVariable {
         RAIN("rain"), SNOW("snow"), TEMPERATURE("temperature"), HUMIDITY("humidity"), LATENESS("lateness"), VISIBILITY("visibility"), PRECIP("precip");
 
         String value;
