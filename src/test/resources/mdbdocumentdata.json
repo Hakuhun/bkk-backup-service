@@ -1,0 +1,16 @@
+{
+  "route" : {
+    "routeId" : 9230.0,
+    "stopId" : 4143.0,
+    "alert" : false
+  },
+  "weather" : {
+    "temperature" : 3.11,
+    "humidity" : 100.0,
+    "pressure" : 1002.0,
+    "visibility" : 2.0,
+    "snow" : 0.0,
+    "rain" : 0.0
+  },
+  "value" : 0.0
+}

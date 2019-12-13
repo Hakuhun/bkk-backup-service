@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.BackupRepository;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.*;
-import hu.oe.bakonyi.bkk.bkkbackupservice.model.BkkBusinessDataVKafka;
+import hu.oe.bakonyi.bkk.bkkbackupservice.model.BKKBusinessDataV4;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -27,7 +27,7 @@ public class BackupConsumer{
 
     @KafkaListener(id = "${spring.kafka.consumer.group-id}", idIsGroup = true, concurrency = "2", topics = "${spring.kafka.topics.refinedBkk}")
     public void consume(@Payload String payload, @Headers MessageHeaders messageHeaders) throws JsonProcessingException {
-        BkkBusinessDataVKafka businessDataV3 = mapper.readValue(payload,BkkBusinessDataVKafka.class);
+        BKKBusinessDataV4 businessDataV3 = mapper.readValue(payload, BKKBusinessDataV4.class);
         Time time = Time.builder().month(businessDataV3.getMonth()).hour(businessDataV3.getHour()).dayOfWeek(businessDataV3.getDayOfWeek()).build();
         MDBBkkBackupIndex index = MDBBkkBackupIndex.builder().routeId(businessDataV3.getRouteId()).time(time).build();
         MDBBkkBackup backup = null;
