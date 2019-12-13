@@ -145,10 +145,17 @@ public class BackupAnalyzerTest {
                 .variable(ConditionBuilder.ConditionalVariable.RAIN)
                 .build();
 
+        ConditionBuilder c = ConditionBuilder.builder()
+                .value(0)
+                .operator(ConditionBuilder.ConditionalOperator.EQUALS)
+                .variable(ConditionBuilder.ConditionalVariable.SNOW)
+                .build();
+
+
         BackupDataAnalyzer analyzer = new BackupDataAnalyzer();
         analyzer.backupRepository = repository;
 
-        Assertions.assertNotEquals(analyzer.conditionalProbability(Instant.now(),"BKK_9230", Arrays.asList(a), Arrays.asList(b)),0);
+        Assertions.assertNotEquals(analyzer.conditionalProbability(Instant.now(),"BKK_3060", Arrays.asList(a,b), Arrays.asList(b, c)),0);
 
     }
 

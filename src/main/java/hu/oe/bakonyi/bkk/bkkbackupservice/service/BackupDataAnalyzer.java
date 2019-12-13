@@ -6,6 +6,7 @@ import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackupData;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackupIndex;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.Time;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.AnalyzerRequestData;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -31,33 +32,48 @@ public class BackupDataAnalyzer {
          * P(A|B) = P(A metszet B)/P(A)
          * */
 
+        if(a == null || a.isEmpty())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+
+        if(b == null || b.isEmpty())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+
         int hour = realTime.atZone(ZoneId.of("Europe/Budapest")).getHour();
         int month = realTime.atZone(ZoneId.of("Europe/Budapest")).getMonthValue();
         int day = realTime.atZone(ZoneId.of("Europe/Budapest")).getDayOfWeek().getValue();
         Time time = Time.builder().dayOfWeek(day).hour(hour).month(month).build();
 
-        double pA = p(route,time,a);
-        double pB = p(route, time, b);
-        List<ConditionBuilder> intercept = new ArrayList<>();
-        intercept.addAll(a); intercept.addAll(b);
-        double pAinterceptB = p(route, time, intercept);
-        return pAinterceptB/pB;
+        List<MDBBkkBackupData> pA = pArray(route,time,a);
+        List<MDBBkkBackupData> pB = pArray(route, time, b);
+        List<MDBBkkBackupData> intersected = new ArrayList<>(CollectionUtils.intersection(pA,pB));
+
+        if(intersected.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        return (double) intersected.size()/pB.size();
     }
 
-    double p(String route, Time time, List<ConditionBuilder> conditions) {
+    List<MDBBkkBackupData> pArray(String route, Time time, List<ConditionBuilder> conditions) {
         MDBBkkBackupIndex index = MDBBkkBackupIndex.builder().time(time)
                 .routeId(Double.parseDouble(route.split("_")[1])).build();
-
         MDBBkkBackup routeData = backupRepository.findById(index).get();
-        double total = routeData.getDatas().size();
-        double conditionalSum = 0;
+
+        List<MDBBkkBackupData> data = new ArrayList<>();
 
         for (MDBBkkBackupData x : routeData.getDatas()) {
             //if (x.getValue() > 5 && x.getWeather().getRain() == 0){
             if (buildCondition(x, conditions)) {
-                conditionalSum++;
+                data.add(x);
             }
         }
+        return data;
+    }
+
+    double pValue(String route, Time time, List<ConditionBuilder> conditions) {
+        MDBBkkBackupIndex index = MDBBkkBackupIndex.builder().time(time)
+                .routeId(Double.parseDouble(route.split("_")[1])).build();
+
+        int total = backupRepository.findById(index).get().getDatas().size();
+        double conditionalSum = pArray(route,time,conditions).size();
+
         return conditionalSum / total;
     }
 
