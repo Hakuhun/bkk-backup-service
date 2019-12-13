@@ -7,5 +7,5 @@ public class BKKBusinessDataV4 {
     private int month, dayOfWeek, hour, routeId, stopId;
     private double temperature, humidity, pressure, snow, rain,visibility;
     private byte alert;
-    private double value;
+    private double label;
 }

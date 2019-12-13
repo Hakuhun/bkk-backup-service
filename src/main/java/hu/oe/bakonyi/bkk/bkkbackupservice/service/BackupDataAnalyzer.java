@@ -5,15 +5,13 @@ import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackup;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackupData;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackupIndex;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.Time;
-import hu.oe.bakonyi.bkk.bkkbackupservice.model.AnalyzerRequestData;
+import hu.oe.bakonyi.bkk.bkkbackupservice.model.ConditionalQueryingRequest;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,28 +21,25 @@ public class BackupDataAnalyzer {
     @Autowired
     BackupRepository backupRepository;
 
-    public double conditionalProbability(AnalyzerRequestData data){
-        return conditionalProbability(data.getRealTime(), data.getRoute(),data.getA(), data.getB());
-    }
-
-    double conditionalProbability(Instant realTime, String route, List<ConditionBuilder> a, List<ConditionBuilder> b) {
+    public double conditionalProbability(ConditionalQueryingRequest request) {
         /*
          * P(A|B) = P(A metszet B)/P(A)
          * */
 
-        if(a == null || a.isEmpty())
+        if(request == null)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 
-        if(b == null || b.isEmpty())
+        if(request.getQuestionableEvent() == null || request.getQuestionableEvent().getConditions().isEmpty())
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 
-        int hour = realTime.atZone(ZoneId.of("Europe/Budapest")).getHour();
-        int month = realTime.atZone(ZoneId.of("Europe/Budapest")).getMonthValue();
-        int day = realTime.atZone(ZoneId.of("Europe/Budapest")).getDayOfWeek().getValue();
-        Time time = Time.builder().dayOfWeek(day).hour(hour).month(month).build();
+        if(request.getCommissionerEvent() == null || request.getCommissionerEvent().getConditions().isEmpty())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 
-        List<MDBBkkBackupData> pA = pArray(route,time,a);
-        List<MDBBkkBackupData> pB = pArray(route, time, b);
+        //A kérdéses esemény
+        List<MDBBkkBackupData> pA = pArray(request.getQuestionableEvent().getRoute(),request.getQuestionableEvent().getTime(),request.getQuestionableEvent().getConditions());
+        //A biztos esemény
+        List<MDBBkkBackupData> pB = pArray(request.getCommissionerEvent().getRoute(), request.getCommissionerEvent().getTime(), request.getCommissionerEvent().getConditions());
+        //A két eseménytér metszete
         List<MDBBkkBackupData> intersected = new ArrayList<>(CollectionUtils.intersection(pA,pB));
 
         if(intersected.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
@@ -59,7 +54,6 @@ public class BackupDataAnalyzer {
         List<MDBBkkBackupData> data = new ArrayList<>();
 
         for (MDBBkkBackupData x : routeData.getDatas()) {
-            //if (x.getValue() > 5 && x.getWeather().getRain() == 0){
             if (buildCondition(x, conditions)) {
                 data.add(x);
             }

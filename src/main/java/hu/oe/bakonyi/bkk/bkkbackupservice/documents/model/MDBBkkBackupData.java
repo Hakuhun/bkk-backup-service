@@ -2,6 +2,7 @@ package hu.oe.bakonyi.bkk.bkkbackupservice.documents.model;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.data.mongodb.core.index.Indexed;
 
 @Data

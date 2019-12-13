@@ -2546,7 +2546,7 @@
         "temperature" : 2.97,
         "humidity" : 93.0,
         "pressure" : 1003.0,
-        "visibility" : 3.0,
+        "visibility" : 2.0,
         "snow" : 0.0,
         "rain" : 0.0
       },
@@ -2562,7 +2562,7 @@
         "temperature" : 2.97,
         "humidity" : 93.0,
         "pressure" : 1003.0,
-        "visibility" : 3.0,
+        "visibility" : 2.0,
         "snow" : 0.0,
         "rain" : 0.0
       },
@@ -2578,7 +2578,7 @@
         "temperature" : 2.97,
         "humidity" : 93.0,
         "pressure" : 1003.0,
-        "visibility" : 3.0,
+        "visibility" : 2.0,
         "snow" : 0.0,
         "rain" : 0.0
       },
@@ -2594,7 +2594,7 @@
         "temperature" : 2.97,
         "humidity" : 93.0,
         "pressure" : 1003.0,
-        "visibility" : 3.0,
+        "visibility" : 2.0,
         "snow" : 0.0,
         "rain" : 0.0
       },

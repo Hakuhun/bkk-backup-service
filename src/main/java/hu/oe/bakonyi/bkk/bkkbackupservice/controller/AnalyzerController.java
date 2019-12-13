@@ -1,6 +1,7 @@
 package hu.oe.bakonyi.bkk.bkkbackupservice.controller;
 
-import hu.oe.bakonyi.bkk.bkkbackupservice.model.AnalyzerRequestData;
+import hu.oe.bakonyi.bkk.bkkbackupservice.model.ConditionalQueryingRequest;
+import hu.oe.bakonyi.bkk.bkkbackupservice.model.QueryingCase;
 import hu.oe.bakonyi.bkk.bkkbackupservice.service.BackupDataAnalyzer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +16,7 @@ public class AnalyzerController {
     BackupDataAnalyzer analyzer;
 
     @PostMapping("/prod/analyze")
-    public ResponseEntity<Double> calculateConditionalProbability(@RequestBody AnalyzerRequestData data){
+    public ResponseEntity<Double> calculateConditionalProbability(@RequestBody ConditionalQueryingRequest data){
         return ResponseEntity.ok(analyzer.conditionalProbability(data));
     }
 

@@ -4,10 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.BackupRepository;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackup;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackupData;
-import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackupIndex;
+import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.Time;
+import hu.oe.bakonyi.bkk.bkkbackupservice.model.ConditionalQueryingRequest;
+import hu.oe.bakonyi.bkk.bkkbackupservice.model.QueryingCase;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import  org.junit.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -18,7 +19,8 @@ import org.springframework.util.ResourceUtils;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Optional;
 
 @ExtendWith(SpringExtension.class)
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -27,13 +29,8 @@ public class BackupAnalyzerTest {
     @MockBean
     BackupRepository repository;
 
-    @BeforeEach
-    void init(){
-
-    }
-
     @Test
-    void executeConditioning_runOK(){
+    public void executeConditioning_runOK(){
         ConditionBuilder condition = ConditionBuilder.builder()
                 .value(1)
                 .operator(ConditionBuilder.ConditionalOperator.ISGREATER)
@@ -54,7 +51,7 @@ public class BackupAnalyzerTest {
     }
 
     @Test
-    void getConditionalVariable_runOk() throws IOException {
+    public void getConditionalVariable_runOk() throws IOException {
         BackupDataAnalyzer analyzer = new BackupDataAnalyzer();
         MDBBkkBackupData model = loadData("classpath:mdbdocumentdata.json");
 
@@ -106,7 +103,7 @@ public class BackupAnalyzerTest {
     }
 
     @Test
-    void buildCondition_isOk(){
+    public void buildCondition_isOk(){
         BackupDataAnalyzer analyzer = new BackupDataAnalyzer();
         MDBBkkBackupData model = loadData("classpath:mdbdocumentdata.json");
 
@@ -129,7 +126,7 @@ public class BackupAnalyzerTest {
     }
 
     @Test
-    void asd(){
+    public void asd(){
 
         MDBBkkBackup datas = loadBulkData("classpath:bulkmdbdocumentdata.json");
         Mockito.when(repository.findById(Mockito.any())).thenReturn(Optional.ofNullable(datas));
@@ -146,20 +143,27 @@ public class BackupAnalyzerTest {
                 .build();
 
         ConditionBuilder c = ConditionBuilder.builder()
-                .value(0)
+                .value(3.0)
                 .operator(ConditionBuilder.ConditionalOperator.EQUALS)
-                .variable(ConditionBuilder.ConditionalVariable.SNOW)
+                .variable(ConditionBuilder.ConditionalVariable.VISIBILITY)
                 .build();
 
+
+        Time time = Time.builder().month(12).hour(23).dayOfWeek(4).build();
+
+        ConditionalQueryingRequest request = ConditionalQueryingRequest.builder()
+                .commissionerEvent(QueryingCase.builder().conditions(Arrays.asList(a,b)).route("BKK_3040").time(time).build())
+                .questionableEvent(QueryingCase.builder().conditions(Arrays.asList(b,c)).route("BKK_3040").time(time).build())
+                .build();
 
         BackupDataAnalyzer analyzer = new BackupDataAnalyzer();
         analyzer.backupRepository = repository;
 
-        Assertions.assertNotEquals(analyzer.conditionalProbability(Instant.now(),"BKK_3060", Arrays.asList(a,b), Arrays.asList(b, c)),0);
-
+        System.out.println("Valószínűség: "+analyzer.conditionalProbability(request));
+        Assertions.assertNotEquals(analyzer.conditionalProbability(request),0.0);
     }
 
-    private MDBBkkBackupData loadData(String path){
+    public MDBBkkBackupData loadData(String path){
         ObjectMapper mapper = new ObjectMapper();
         mapper.findAndRegisterModules();
         try {
@@ -170,7 +174,7 @@ public class BackupAnalyzerTest {
         }
     }
 
-    private MDBBkkBackup loadBulkData(String path){
+    public MDBBkkBackup loadBulkData(String path){
         ObjectMapper mapper = new ObjectMapper();
         mapper.findAndRegisterModules();
         try {
