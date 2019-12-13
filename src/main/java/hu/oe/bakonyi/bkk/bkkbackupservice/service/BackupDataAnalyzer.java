@@ -6,6 +6,7 @@ import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackupData;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackupIndex;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.Time;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.ConditionalQueryingRequest;
+import hu.oe.bakonyi.bkk.bkkbackupservice.model.P;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,49 +27,56 @@ public class BackupDataAnalyzer {
          * P(A|B) = P(A metszet B)/P(A)
          * */
 
-        if(request == null)
+        if (request == null)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 
-        if(request.getQuestionableEvent() == null || request.getQuestionableEvent().getConditions().isEmpty())
+        if (request.getQuestionableEvent() == null || request.getQuestionableEvent().getConditions().isEmpty())
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 
-        if(request.getCommissionerEvent() == null || request.getCommissionerEvent().getConditions().isEmpty())
+        if (request.getCommissionerEvent() == null || request.getCommissionerEvent().getConditions().isEmpty())
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 
         //A kérdéses esemény
-        List<MDBBkkBackupData> pA = pArray(request.getQuestionableEvent().getRoute(),request.getQuestionableEvent().getTime(),request.getQuestionableEvent().getConditions());
+        P pA = calculateP(request.getQuestionableEvent().getRoute(), request.getQuestionableEvent().getFrom(), request.getQuestionableEvent().getTo(), request.getQuestionableEvent().getConditions());
         //A biztos esemény
-        List<MDBBkkBackupData> pB = pArray(request.getCommissionerEvent().getRoute(), request.getCommissionerEvent().getTime(), request.getCommissionerEvent().getConditions());
+        P pB = calculateP(request.getCommissionerEvent().getRoute(), request.getCommissionerEvent().getFrom(), request.getCommissionerEvent().getTo(), request.getCommissionerEvent().getConditions());
         //A két eseménytér metszete
-        List<MDBBkkBackupData> intersected = new ArrayList<>(CollectionUtils.intersection(pA,pB));
+        List<MDBBkkBackupData> intersectedData = new ArrayList<>(CollectionUtils.intersection(pA.getData(), pB.getData()));
 
-        if(intersected.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-        return (double) intersected.size()/pB.size();
+        P intersectedP = P.builder().data(intersectedData).fullEvent(pA.getPositiveCases()+pB.getPositiveCases())
+                        .positiveCases(intersectedData.size()).possibility((double) intersectedData.size()/(pA.getPositiveCases()+pB.getPositiveCases())).build();
+
+        if (intersectedData.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        return (double) intersectedP.getPossibility() / pB.getPossibility();
     }
 
-    List<MDBBkkBackupData> pArray(String route, Time time, List<ConditionBuilder> conditions) {
-        MDBBkkBackupIndex index = MDBBkkBackupIndex.builder().time(time)
-                .routeId(Double.parseDouble(route.split("_")[1])).build();
-        MDBBkkBackup routeData = backupRepository.findById(index).get();
+    P calculateP(String route, Time from, Time to, List<ConditionBuilder> conditions) {
+        List<MDBBkkBackupData> positiveCases = new ArrayList<>();
+        List<MDBBkkBackupData> data = calculateDataTimes(from, to, route);
 
+        for (MDBBkkBackupData x : data) {
+            if (buildCondition(x, conditions)) {
+                positiveCases.add(x);
+            }
+        }
+        return P.builder().data(positiveCases).fullEvent(data.size()).positiveCases(positiveCases.size()).possibility((double)positiveCases.size()/data.size()).build();
+    }
+
+    List<MDBBkkBackupData> calculateDataTimes(Time from, Time to, String route){
         List<MDBBkkBackupData> data = new ArrayList<>();
 
-        for (MDBBkkBackupData x : routeData.getDatas()) {
-            if (buildCondition(x, conditions)) {
-                data.add(x);
+        for (int month = from.getMonth(); month <= to.getMonth(); month++) {
+            for (int day = from.getDayOfWeek(); day <= to.getDayOfWeek(); day++) {
+                for (int hour = from.getHour(); hour <= to.getHour(); hour++) {
+                    MDBBkkBackupIndex index = MDBBkkBackupIndex.builder().time(
+                            Time.builder().month(month).dayOfWeek(day).hour(hour).build()
+                    ).routeId(Double.parseDouble(route.split("_")[1])).build();
+                    MDBBkkBackup routeData = backupRepository.findById(index).get();
+                    data.addAll(routeData.getDatas());
+                }
             }
         }
         return data;
-    }
-
-    double pValue(String route, Time time, List<ConditionBuilder> conditions) {
-        MDBBkkBackupIndex index = MDBBkkBackupIndex.builder().time(time)
-                .routeId(Double.parseDouble(route.split("_")[1])).build();
-
-        int total = backupRepository.findById(index).get().getDatas().size();
-        double conditionalSum = pArray(route,time,conditions).size();
-
-        return conditionalSum / total;
     }
 
     boolean buildCondition(MDBBkkBackupData x, List<ConditionBuilder> conditions) {
@@ -94,19 +102,25 @@ public class BackupDataAnalyzer {
                 return x.getWeather().getVisibility();
             case LATENESS:
                 return x.getValue();
-            case PRECIP: return x.getWeather().getRain() + x.getWeather().getSnow();
+            case PRECIP:
+                return x.getWeather().getRain() + x.getWeather().getSnow();
             default:
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Ilyen lekérdezésre nincs lehetősége");
         }
     }
 
-    boolean executeConditioning(ConditionBuilder condition, double x){
+    boolean executeConditioning(ConditionBuilder condition, double x) {
         switch (condition.operator) {
-            case ISLOWER: return x > condition.value;
-            case ISGREATER: return x < condition.value;
-            case EQUALS: return x == condition.value;
-            case INDELTA: return x < condition.value + condition.delta && x > condition.value - condition.delta;
-            default: throw new ResponseStatusException(HttpStatus.CONFLICT, "Ilyen lekérdezésre nincs lehetősége");
+            case ISLOWER:
+                return x > condition.value;
+            case ISGREATER:
+                return x < condition.value;
+            case EQUALS:
+                return x == condition.value;
+            case INDELTA:
+                return x < condition.value + condition.delta && x > condition.value - condition.delta;
+            default:
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Ilyen lekérdezésre nincs lehetősége");
         }
     }
 

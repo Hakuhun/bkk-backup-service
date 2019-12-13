@@ -5,13 +5,13 @@ import hu.oe.bakonyi.bkk.bkkbackupservice.service.ConditionBuilder;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.Instant;
 import java.util.List;
 
 @Data
 @Builder
 public class QueryingCase {
-    Time time;
-    String route;
-    List<ConditionBuilder> conditions;
+    private Time from;
+    private Time to;
+    private String route;
+    private List<ConditionBuilder> conditions;
 }

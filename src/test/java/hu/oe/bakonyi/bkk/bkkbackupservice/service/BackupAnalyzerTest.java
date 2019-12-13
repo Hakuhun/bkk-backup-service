@@ -152,8 +152,8 @@ public class BackupAnalyzerTest {
         Time time = Time.builder().month(12).hour(23).dayOfWeek(4).build();
 
         ConditionalQueryingRequest request = ConditionalQueryingRequest.builder()
-                .commissionerEvent(QueryingCase.builder().conditions(Arrays.asList(a,b)).route("BKK_3040").time(time).build())
-                .questionableEvent(QueryingCase.builder().conditions(Arrays.asList(b,c)).route("BKK_3040").time(time).build())
+                .commissionerEvent(QueryingCase.builder().conditions(Arrays.asList(a,b)).route("BKK_3040").from(time).to(time).build())
+                .questionableEvent(QueryingCase.builder().conditions(Arrays.asList(b,c)).route("BKK_3040").from(time).to(time).build())
                 .build();
 
         BackupDataAnalyzer analyzer = new BackupDataAnalyzer();
