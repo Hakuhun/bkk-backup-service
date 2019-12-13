@@ -7,8 +7,8 @@ import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackupData;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.Time;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.ConditionalQueryingRequest;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.QueryingCase;
+import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
-import  org.junit.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -17,8 +17,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.ResourceUtils;
 
+import java.io.File;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -126,7 +126,7 @@ public class BackupAnalyzerTest {
     }
 
     @Test
-    public void asd(){
+    public void asd() throws IOException {
 
         MDBBkkBackup datas = loadBulkData("classpath:bulkmdbdocumentdata.json");
         Mockito.when(repository.findById(Mockito.any())).thenReturn(Optional.ofNullable(datas));
@@ -155,6 +155,9 @@ public class BackupAnalyzerTest {
                 .commissionerEvent(QueryingCase.builder().conditions(Arrays.asList(a,b)).route("BKK_3040").from(time).to(time).build())
                 .questionableEvent(QueryingCase.builder().conditions(Arrays.asList(b,c)).route("BKK_3040").from(time).to(time).build())
                 .build();
+
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(new File("request.json"), request);
 
         BackupDataAnalyzer analyzer = new BackupDataAnalyzer();
         analyzer.backupRepository = repository;

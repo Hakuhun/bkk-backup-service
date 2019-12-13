@@ -5,6 +5,7 @@ import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackup;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackupData;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackupIndex;
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.Time;
+import hu.oe.bakonyi.bkk.bkkbackupservice.model.ConditionalPossibilityResponse;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.ConditionalQueryingRequest;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.P;
 import org.apache.commons.collections4.CollectionUtils;
@@ -13,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +24,7 @@ public class BackupDataAnalyzer {
     @Autowired
     BackupRepository backupRepository;
 
-    public double conditionalProbability(ConditionalQueryingRequest request) {
+    public ConditionalPossibilityResponse conditionalProbability(ConditionalQueryingRequest request) {
         /*
          * P(A|B) = P(A metszet B)/P(A)
          * */
@@ -46,8 +48,18 @@ public class BackupDataAnalyzer {
         P intersectedP = P.builder().data(intersectedData).fullEvent(pA.getPositiveCases()+pB.getPositiveCases())
                         .positiveCases(intersectedData.size()).possibility((double) intersectedData.size()/(pA.getPositiveCases()+pB.getPositiveCases())).build();
 
-        if (intersectedData.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-        return (double) intersectedP.getPossibility() / pB.getPossibility();
+        if (intersectedData.isEmpty()) {
+            return ConditionalPossibilityResponse.builder().route(request.getCommissionerEvent().getRoute())
+                    .now(Instant.now())
+                    .possibility(0)
+                    .responseValue(ConditionalPossibilityResponse.ResponseValue.OK_NOSUCHDATA)
+                    .message("A rendszer jelenleg nem képes a kérésben megfelelő adatokkal számítani").build();
+        }
+        return ConditionalPossibilityResponse.builder().route(request.getCommissionerEvent().getRoute())
+                .now(Instant.now())
+                .possibility(intersectedP.getPossibility() / pB.getPossibility())
+                .responseValue(ConditionalPossibilityResponse.ResponseValue.OK_CALCULATED)
+                .message("Az ön által leírt szcenáriójának valószínűsége: "+ intersectedP.getPossibility() / pB.getPossibility()).build();
     }
 
     P calculateP(String route, Time from, Time to, List<ConditionBuilder> conditions) {

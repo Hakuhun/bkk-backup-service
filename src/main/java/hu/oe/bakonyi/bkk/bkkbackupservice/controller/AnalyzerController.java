@@ -1,5 +1,6 @@
 package hu.oe.bakonyi.bkk.bkkbackupservice.controller;
 
+import hu.oe.bakonyi.bkk.bkkbackupservice.model.ConditionalPossibilityResponse;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.ConditionalQueryingRequest;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.QueryingCase;
 import hu.oe.bakonyi.bkk.bkkbackupservice.service.BackupDataAnalyzer;
@@ -16,7 +17,8 @@ public class AnalyzerController {
     BackupDataAnalyzer analyzer;
 
     @PostMapping("/prod/analyze")
-    public ResponseEntity<Double> calculateConditionalProbability(@RequestBody ConditionalQueryingRequest data){
+    public ResponseEntity<ConditionalPossibilityResponse> calculateConditionalProbability(@RequestBody ConditionalQueryingRequest data){
+        ConditionalPossibilityResponse response = analyzer.conditionalProbability(data);
         return ResponseEntity.ok(analyzer.conditionalProbability(data));
     }
 
