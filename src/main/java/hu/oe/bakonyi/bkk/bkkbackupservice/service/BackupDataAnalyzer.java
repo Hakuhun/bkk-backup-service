@@ -8,6 +8,7 @@ import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.Time;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.ConditionalPossibilityResponse;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.ConditionalQueryingRequest;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.P;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,8 +18,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
+@Log4j2
 public class BackupDataAnalyzer {
 
     @Autowired
@@ -35,12 +38,6 @@ public class BackupDataAnalyzer {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
 
-        if (request.getQuestionableEvent() == null || request.getQuestionableEvent().getConditions().isEmpty())
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-
-        if (request.getCommissionerEvent() == null || request.getCommissionerEvent().getConditions().isEmpty())
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-
         //A kérdéses esemény
         P pA = calculateP(request.getQuestionableEvent().getRoute(), request.getQuestionableEvent().getFrom(), request.getQuestionableEvent().getTo(), request.getQuestionableEvent().getConditions());
         //A biztos esemény
@@ -48,8 +45,13 @@ public class BackupDataAnalyzer {
         //A két eseménytér metszete
         List<MDBBkkBackupData> intersectedData = new ArrayList<>(CollectionUtils.intersection(pA.getData(), pB.getData()));
 
+        int a = CollectionUtils.union(pA.getData(), pB.getData()).size();
+
         P intersectedP = P.builder().data(intersectedData).fullEvent(pA.getPositiveCases() + pB.getPositiveCases())
-                .positiveCases(intersectedData.size()).possibility((double) intersectedData.size() / (pA.getPositiveCases() + pB.getPositiveCases())).build();
+                .positiveCases(intersectedData.size())
+                //.possibility((double) intersectedData.size() / (pA.getPositiveCases() + pB.getPositiveCases()))
+                .possibility((double) intersectedData.size() / CollectionUtils.union(pA.getData(), pB.getData()).size())
+                .build();
 
         if (intersectedData.isEmpty()) {
             return ConditionalPossibilityResponse.builder().route(request.getCommissionerEvent().getRoute())
@@ -66,15 +68,17 @@ public class BackupDataAnalyzer {
     }
 
     P calculateP(String route, Time from, Time to, List<ConditionBuilder> conditions) {
-        List<MDBBkkBackupData> positiveCases = new ArrayList<>();
         List<MDBBkkBackupData> data = calculateDataTimes(from, to, route);
+        List<MDBBkkBackupData> positiveCases = new ArrayList<>();
 
         for (MDBBkkBackupData x : data) {
             if (buildCondition(x, conditions)) {
                 positiveCases.add(x);
             }
         }
-        return P.builder().data(positiveCases).fullEvent(data.size()).positiveCases(positiveCases.size()).possibility((double) positiveCases.size() / data.size()).build();
+        return P.builder().data(positiveCases).fullEvent(data.size())
+                .positiveCases(positiveCases.size())
+                .possibility((double) positiveCases.size() / data.size()).build();
     }
 
     List<MDBBkkBackupData> calculateDataTimes(Time from, Time to, String route) {
@@ -86,8 +90,13 @@ public class BackupDataAnalyzer {
                     MDBBkkBackupIndex index = MDBBkkBackupIndex.builder().time(
                             Time.builder().month(month).dayOfWeek(day).hour(hour).build()
                     ).routeId(Double.parseDouble(route.split("_")[1])).build();
-                    MDBBkkBackup routeData = backupRepository.findById(index).get();
-                    data.addAll(routeData.getDatas());
+                    MDBBkkBackup routeData = null;
+                    try{
+                        routeData = backupRepository.findById(index).get();
+                        data.addAll(routeData.getDatas());
+                    }catch (NoSuchElementException e){
+                        log.error("Elem nem található: " + index);
+                    }
                 }
             }
         }
@@ -95,6 +104,10 @@ public class BackupDataAnalyzer {
     }
 
     boolean buildCondition(MDBBkkBackupData x, List<ConditionBuilder> conditions) {
+        if(conditions == null ||conditions.size() == 0){
+            return true;
+        }
+
         List<Boolean> logicalValues = new ArrayList<>();
         for (ConditionBuilder condition : conditions) {
             double conditionVariableValue = getConditionalVariable(condition, x);
@@ -133,7 +146,7 @@ public class BackupDataAnalyzer {
             case EQUALS:
                 return x == condition.value;
             case INDELTA:
-                return x < condition.value + condition.delta && x > condition.value - condition.delta;
+                return x <= condition.value + condition.delta && x >= condition.value - condition.delta;
             default:
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Ilyen lekérdezésre nincs lehetősége");
         }
