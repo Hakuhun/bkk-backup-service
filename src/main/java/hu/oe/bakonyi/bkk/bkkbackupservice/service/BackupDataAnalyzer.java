@@ -1,10 +1,7 @@
 package hu.oe.bakonyi.bkk.bkkbackupservice.service;
 
 import hu.oe.bakonyi.bkk.bkkbackupservice.documents.BackupRepository;
-import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackup;
-import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackupData;
-import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.MDBBkkBackupIndex;
-import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.Time;
+import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.*;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.ConditionalPossibilityResponse;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.ConditionalQueryingRequest;
 import hu.oe.bakonyi.bkk.bkkbackupservice.model.P;
@@ -19,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 @Log4j2
@@ -62,13 +60,14 @@ public class BackupDataAnalyzer {
         }
         return ConditionalPossibilityResponse.builder().route(request.getCommissionerEvent().getRoute())
                 .now(Instant.now())
+                .weather(calculatreAvgWeather(pA.getData()))
                 .possibility(intersectedP.getPossibility() / pB.getPossibility())
                 .responseValue(ConditionalPossibilityResponse.ResponseValue.OK_CALCULATED)
                 .message("Az ön által leírt szcenárió valószínűsége: " + intersectedP.getPossibility() / pB.getPossibility()).build();
     }
 
     P calculateP(String route, Time from, Time to, List<ConditionBuilder> conditions) {
-        List<MDBBkkBackupData> data = calculateDataTimes(from, to, route);
+        List<MDBBkkBackupData> data = calculateDataByTimes(from, to, route);
         List<MDBBkkBackupData> positiveCases = new ArrayList<>();
 
         for (MDBBkkBackupData x : data) {
@@ -81,7 +80,7 @@ public class BackupDataAnalyzer {
                 .possibility((double) positiveCases.size() / data.size()).build();
     }
 
-    List<MDBBkkBackupData> calculateDataTimes(Time from, Time to, String route) {
+    List<MDBBkkBackupData> calculateDataByTimes(Time from, Time to, String route) {
         List<MDBBkkBackupData> data = new ArrayList<>();
 
         for (int month = from.getMonth(); month <= to.getMonth(); month++) {
@@ -150,6 +149,17 @@ public class BackupDataAnalyzer {
             default:
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Ilyen lekérdezésre nincs lehetősége");
         }
+    }
+
+    Weather calculatreAvgWeather(List<MDBBkkBackupData> arr){
+        return Weather.builder()
+                .humidity(arr.stream().mapToDouble(x->x.getWeather().getHumidity()).average().orElse(Double.NaN))
+                .pressure(arr.stream().mapToDouble(x->x.getWeather().getPressure()).average().orElse(Double.NaN))
+                .rain(arr.stream().mapToDouble(x->x.getWeather().getRain()).average().orElse(Double.NaN))
+                .snow(arr.stream().mapToDouble(x->x.getWeather().getSnow()).average().orElse(Double.NaN))
+                .temperature(arr.stream().mapToDouble(x->x.getWeather().getTemperature()).average().orElse(Double.NaN))
+                .visibility(arr.stream().mapToDouble(x->x.getWeather().getVisibility()).average().orElse(Double.NaN))
+                .build();
     }
 
 }

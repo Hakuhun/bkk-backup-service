@@ -1,5 +1,6 @@
 package hu.oe.bakonyi.bkk.bkkbackupservice.model;
 
+import hu.oe.bakonyi.bkk.bkkbackupservice.documents.model.Weather;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,6 +13,7 @@ public class ConditionalPossibilityResponse {
     ResponseValue responseValue;
     Instant now;
     String route, message;
+    Weather weather;
     double possibility;
 
     public enum ResponseValue{
