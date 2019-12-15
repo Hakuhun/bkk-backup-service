@@ -10,6 +10,4 @@ import java.util.List;
 
 public interface BackupRepository extends MongoRepository<MDBBkkBackup, MDBBkkBackupIndex> {
 
-    List<MDBBkkBackupData> findAllBy_idTimeAndDatasRouteRouteIdAndDatasRouteStopId(Time time, String routeId);
-
 }

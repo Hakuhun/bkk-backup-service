@@ -17,7 +17,7 @@ import java.util.Arrays;
 
 @Service
 @Log4j2
-public class BackupConsumer{
+public class BackupConsumer {
 
     @Autowired
     BackupRepository repository;
@@ -35,13 +35,13 @@ public class BackupConsumer{
         Route route = Route.builder().routeId(businessDataV3.getRouteId()).stopId(businessDataV3.getStopId()).alert(businessDataV3.getAlert() == 1).build();
         Weather weather = Weather.builder().humidity(businessDataV3.getHumidity()).temperature(businessDataV3.getTemperature()).visibility(businessDataV3.getVisibility()).pressure(businessDataV3.getPressure()).rain(businessDataV3.getRain()).snow(businessDataV3.getSnow()).build();
         MDBBkkBackupData data = MDBBkkBackupData.builder().route(route).weather(weather).value(businessDataV3.getLabel()).build();
-        if(repository.existsById(index)){
+        if (repository.existsById(index)) {
             backup = repository.findById(index).get();
             int size = backup.getDatas().size();
             backup.getDatas().add(data);
             repository.save(backup);
-            log.info("Adat frissítve: " + index +" " + size +"->"+ backup.getDatas().size());
-        }else{
+            log.info("Adat frissítve: " + index + " " + size + "->" + backup.getDatas().size());
+        } else {
             backup = MDBBkkBackup.builder().datas(Arrays.asList(data))._id(index).build();
             repository.insert(backup);
             log.info("Adat hozzáadva: " + index);

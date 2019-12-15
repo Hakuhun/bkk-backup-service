@@ -12,7 +12,7 @@ import java.util.List;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document(collection = "routes")
-public class MDBBkkBackup{
+public class MDBBkkBackup {
     @Id
     private MDBBkkBackupIndex _id;
     private List<MDBBkkBackupData> datas;

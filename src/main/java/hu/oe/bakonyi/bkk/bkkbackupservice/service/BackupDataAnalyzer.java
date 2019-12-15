@@ -16,7 +16,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 
 @Service
 @Log4j2
@@ -32,7 +31,7 @@ public class BackupDataAnalyzer {
         if (request == null)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 
-        if(!request.getCommissionerEvent().getRoute().contains("BKK") || !request.getQuestionableEvent().getRoute().contains("BKK")){
+        if (!request.getCommissionerEvent().getRoute().contains("BKK") || !request.getQuestionableEvent().getRoute().contains("BKK")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
 
@@ -90,10 +89,10 @@ public class BackupDataAnalyzer {
                             Time.builder().month(month).dayOfWeek(day).hour(hour).build()
                     ).routeId(Double.parseDouble(route.split("_")[1])).build();
                     MDBBkkBackup routeData = null;
-                    try{
+                    try {
                         routeData = backupRepository.findById(index).get();
                         data.addAll(routeData.getDatas());
-                    }catch (NoSuchElementException e){
+                    } catch (NoSuchElementException e) {
                         log.error("Elem nem található: " + index);
                     }
                 }
@@ -103,7 +102,7 @@ public class BackupDataAnalyzer {
     }
 
     boolean buildCondition(MDBBkkBackupData x, List<ConditionBuilder> conditions) {
-        if(conditions == null ||conditions.size() == 0){
+        if (conditions == null || conditions.size() == 0) {
             return true;
         }
 
@@ -151,14 +150,14 @@ public class BackupDataAnalyzer {
         }
     }
 
-    Weather calculatreAvgWeather(List<MDBBkkBackupData> arr){
+    Weather calculatreAvgWeather(List<MDBBkkBackupData> arr) {
         return Weather.builder()
-                .humidity(arr.stream().mapToDouble(x->x.getWeather().getHumidity()).average().orElse(Double.NaN))
-                .pressure(arr.stream().mapToDouble(x->x.getWeather().getPressure()).average().orElse(Double.NaN))
-                .rain(arr.stream().mapToDouble(x->x.getWeather().getRain()).average().orElse(Double.NaN))
-                .snow(arr.stream().mapToDouble(x->x.getWeather().getSnow()).average().orElse(Double.NaN))
-                .temperature(arr.stream().mapToDouble(x->x.getWeather().getTemperature()).average().orElse(Double.NaN))
-                .visibility(arr.stream().mapToDouble(x->x.getWeather().getVisibility()).average().orElse(Double.NaN))
+                .humidity(arr.stream().mapToDouble(x -> x.getWeather().getHumidity()).average().orElse(Double.NaN))
+                .pressure(arr.stream().mapToDouble(x -> x.getWeather().getPressure()).average().orElse(Double.NaN))
+                .rain(arr.stream().mapToDouble(x -> x.getWeather().getRain()).average().orElse(Double.NaN))
+                .snow(arr.stream().mapToDouble(x -> x.getWeather().getSnow()).average().orElse(Double.NaN))
+                .temperature(arr.stream().mapToDouble(x -> x.getWeather().getTemperature()).average().orElse(Double.NaN))
+                .visibility(arr.stream().mapToDouble(x -> x.getWeather().getVisibility()).average().orElse(Double.NaN))
                 .build();
     }
 
